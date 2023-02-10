@@ -1,31 +1,18 @@
 #!/usr/bin/python3
-"""
-A script to export data in the CSV format.
-Write a Python script that, using this REST API, for a given employee ID,
-returns information about his/her TODO list progress
-"""
+"""Exports to-do list information for a given employee ID to CSV format."""
+import csv
+import requests
+import sys
+
 if __name__ == "__main__":
+    user_id = sys.argv[1]
+    url = "https://jsonplaceholder.typicode.com/"
+    user = requests.get(url + "users/{}".format(user_id)).json()
+    username = user.get("username")
+    todos = requests.get(url + "todos", params={"userId": user_id}).json()
 
-    import requests
-    import sys
-
-    if len(sys.argv) == 2 and sys.argv[1].isdigit():
-        u_url = 'https://jsonplaceholder.typicode.com/users/'
-        td_url = 'https://jsonplaceholder.typicode.com/todos?userId='
-
-        USER_ID = requests.get(u_url + sys.argv[1]).json()['id']
-        USERNAME = requests.get(u_url + sys.argv[1]).json()['username']
-        TASK_COMPLETED_STATUSES = [task['completed'] for task in requests.
-                                   get(td_url + sys.argv[1]).json()]
-        TASKS_TITLES = [task['title'] for task in requests.
-                        get(td_url + sys.argv[1]).json()]
-        TOTAL_NUMBER_OF_TASKS = len(requests.get(td_url + sys.argv[1]).json())
-
-        TASKS_LIST = ['"{}","{}","{}","{}"\n'.
-                      format(USER_ID, USERNAME, TASK_COMPLETED_STATUSES[N],
-                             TASKS_TITLES[N])
-                      for N in range(TOTAL_NUMBER_OF_TASKS)]
-
-        with open('{}.csv'.format(USER_ID), 'w') as test_file:
-            for TASK_LIST in TASKS_LIST:
-                test_file.write(TASK_LIST)
+    with open("{}.csv".format(user_id), "w", newline="") as csvfile:
+        writer = csv.writer(csvfile, quoting=csv.QUOTE_ALL)
+        [writer.writerow(
+            [user_id, username, t.get("completed"), t.get("title")]
+         ) for t in todos]
